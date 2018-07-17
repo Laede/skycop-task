@@ -3,36 +3,32 @@
 namespace App\Service;
 
 use App\FlightObject\Flight;
+use App\Rule\RuleInterface;
 
 class FlightClaimabilityService
 {
+    /**
+     * @var RuleInterface[]
+     */
+    private $rules;
+
+    public function __construct($rules)
+    {
+        $this->rules = $rules;
+    }
+
     /**
      * @param Flight $flight
      * @return bool
      */
     public function predict(Flight $flight): bool
     {
-        if(!$this->isEuropeanUnion($flight)){
-            return false;
+        foreach ($this->rules as $rule)
+        {
+            if($rule->doesPass($flight)){
+                return true;
+            }
         }
-
-        if($flight->getStatus() === Flight::STATUS_CANCEL && $flight->getDetails() >= 14){
-            return false;
-        }
-
-        if($flight->getStatus() === Flight::STATUS_DELAY && $flight->getDetails() < 3){
-            return false;
-        }
-        return true;
+        return false;
     }
-
-    /**
-     * @param Flight $flight
-     * @return bool
-     */
-    protected function isEuropeanUnion(Flight $flight)
-    {
-        return $flight->getCountry() != 'RU';
-    }
-
 }
